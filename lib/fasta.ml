@@ -8,13 +8,13 @@ let rec read_fasta_sequence f curdata sin =
     match Seq.next sin with
 	Some d -> read_fasta_sequence f d sin
       | None -> [< >]
-  else if String_ext.contains curdata '\n' then
-    read_fasta_sequence f (String_ext.concat "" (String_ext.split curdata "\n")) sin
   else if String_ext.contains curdata '>' then
     let idx = String_ext.index curdata '>' in
     let s = String_ext.sub curdata 0 idx in
     let r = String_ext.sub curdata idx (String_ext.length curdata - idx) in
     [< 'Sequence s; f r sin >]
+  else if String_ext.contains curdata '\n' then
+    read_fasta_sequence f (String_ext.concat "" (String_ext.split curdata "\n")) sin
   else
     [< 'Sequence curdata; read_fasta_sequence f "" sin >]
 
