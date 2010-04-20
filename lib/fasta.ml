@@ -10,7 +10,7 @@ let rec read_fasta_sequence f curdata sin =
       | None -> [< >]
   else if String_ext.contains curdata '>' then
     let idx = String_ext.index curdata '>' in
-    let s = String_ext.sub curdata 0 idx in
+    let s = String_ext.sub curdata 0 (idx - 1) in
     let r = String_ext.sub curdata idx (String_ext.length curdata - idx) in
     [< 'Sequence s; f r sin >]
   else if String_ext.contains curdata '\n' then
