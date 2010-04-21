@@ -46,12 +46,12 @@ let create_training_data gene_boundaries fin =
 	    [< '(NotGene, d); read_next (ctd []) e >]
 	| (gs, _ge)::_gbs when s < gs && gs <= e ->
 	    let subd = String_ext.sub d 0 (gs - s) in
-	    let restd = String_ext.sub d (gs - s + 1) (String_ext.length d - (gs - s + 1)) in
-	    [< '(NotGene, subd); ctd gb (gs + 1, e) restd >]
+	    let restd = String_ext.sub d (gs - s) (String_ext.length d - (gs - s)) in
+	    [< '(NotGene, subd); ctd gb (gs, e) restd >]
 	| (gs, ge)::gbs when gs <= s && ge < e ->
 	    let subd = String_ext.sub d 0 (ge - s) in
-	    let restd = String_ext.sub d (ge - s + 1) (String_ext.length d - (ge - s + 1)) in
-	    [< '(Gene, subd); ctd gbs (ge + 1, e) restd >]
+	    let restd = String_ext.sub d (ge - s) (String_ext.length d - (ge - s)) in
+	    [< '(Gene, subd); ctd gbs (ge, e) restd >]
 	| (gs, ge)::gbs when s = gs && ge = e ->
 	    [< '(Gene, d); read_next (ctd gbs) e >]
 	| (gs, ge)::_gbs when s = gs && e < ge ->

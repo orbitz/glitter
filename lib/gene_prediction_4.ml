@@ -21,31 +21,32 @@ let create_training_data gene_boundaries fin =
     sg [] gd
   in
   let rec ctd d sin =
-    match d with
-	"" ->
-	  begin
-	    match Seq.next sin with
-		Some (Gene_prediction_2.NotGene, d) ->
-		  [< '(NotGene, d); ctd "" sin >]
-	      | Some (Gene_prediction_2.Gene, d) ->
-		  let (c, d) = split_gene d in
-		  [< c; ctd d sin >]
-	      | Some (Gene_prediction_2.Q0, _) ->
-		  raise (Failure "Not supposed to happen")
-	      | None ->
-		  [< >]
-	  end
-      | d ->
-	  match Seq.next sin with
-	      Some (Gene_prediction_2.NotGene, _) ->
-		raise (Failure ("Expecting a gene: d: " ^ d))
-	    | Some (Gene_prediction_2.Gene, v) ->
-		let (c, d) = split_gene (d ^ v) in
-		[< c; ctd d sin >]
-	    | Some (Gene_prediction_2.Q0, _) ->
-		raise (Failure "Not supposed to happen")
-	    | None ->
-		raise (Failure "Expecting more gene data but got nothing")
+    if d = "" then
+      begin
+	match Seq.next sin with
+	    Some (Gene_prediction_2.NotGene, d) ->
+	      [< '(NotGene, d); ctd "" sin >]
+	  | Some (Gene_prediction_2.Gene, d) ->
+	      let (c, d') = split_gene d in
+	      [< c; ctd d' sin >]
+	  | Some (Gene_prediction_2.Q0, _) ->
+	      raise (Failure "Not supposed to happen")
+	  | None ->
+	      [< >]
+      end
+    else
+      begin
+	match Seq.next sin with
+	    Some (Gene_prediction_2.NotGene, _) ->
+	      raise (Failure ("Expecting a gene: d: " ^ d))
+	  | Some (Gene_prediction_2.Gene, v) ->
+	      let (c, d') = split_gene (d ^ v) in
+	      [< c; ctd d' sin >]
+	  | Some (Gene_prediction_2.Q0, _) ->
+	      raise (Failure "Not supposed to happen")
+	  | None ->
+	      raise (Failure "Expecting more gene data but got nothing")
+      end
   in
   let sin = Gene_prediction_2.create_training_data gene_boundaries fin in
   ctd "" sin

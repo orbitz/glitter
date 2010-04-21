@@ -36,8 +36,6 @@ let list_of_string s = Seq.to_list (Seq.of_string s)
 
 (* let fv = H.forward_viterbi (Seq.of_list observations) hmm *)
 
-(* let () = let _ = fv in () *)
-
 
 (* type states = Q0 | One | Two *)
 
@@ -71,6 +69,5 @@ let gene_boundaries = Genbank.read "../datasets/E.coli.O103.H2_str.12009.gb"
 let td = Seq.to_list (Gene_prediction_4.create_training_data gene_boundaries fasta)
 let training_data = Seq.map (fun (s, v) -> (s, list_of_string v)) (Seq.of_list td)
 let hmm = H.train Gene_prediction_4.Q0 training_data
-let viterbi_results = H.forward_viterbi (Fasta.to_seq (Fasta.read_file ~chunk_size:10000 "../datasets/E.coli.O103.H2_str.12009.fasta")) hmm
-
+let (total, path, prob) = H.forward_viterbi (Fasta.to_seq (Fasta.read_file ~chunk_size:10000 "../datasets/E.coli.O103.H2_str.12009.fasta")) hmm
 

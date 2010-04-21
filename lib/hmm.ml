@@ -137,7 +137,7 @@ module Make =
 	in
 	let calc_max t ob ns (total, argmax, valmax) s =
 	  let (prob, v_path, v_prob) = StateMap.find s t in
-	  let p = log (get_emission hmm s ob) +. log (get_transition hmm s ns) in
+	  let p = log (get_emission_def hmm s ob 0.0) +. log (get_transition_def hmm s ns 0.0) in
 	  let prob = prob +. p in
 	  let v_prob = v_prob +. p in
 	  let total = if total = neg_infinity then prob else logsum total prob in
