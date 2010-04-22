@@ -1,6 +1,6 @@
 (* 4 state hmm *)
 
-type coding_state = Q0 | NotGene | C1 | C2 | C3
+type coding_state = Q0 | NotGene | A | T | G | C1 | C2 | C3
 
 
 (*
@@ -10,6 +10,19 @@ type coding_state = Q0 | NotGene | C1 | C2 | C3
  * the codons
  *)
 let create_training_data gene_boundaries fin =
+  let rec gene_start d sin =
+    if String_ext.length d < 3 then
+      match Seq.next sin with
+	  Some (Gene_prediction_2.Gene, d') ->
+	    gene_start (d ^ d') sin
+	| Some (Gene_prediction_2.NotGene, _) ->
+	    raise (Failure "At start of gene and gene end, wuuut?")
+	| None ->
+	    raise (Failure "At start of gene and sequence end, wuuuut?")
+    else
+    let (l, d) = Hmm.labeled_of_string_all [A; T; G;] d in
+    (Seq.of_list (List.map (fun (label, c) -> (label, String_ext.make 1 c)) l), d)
+  in
   let split_gene gd =
     let (l, d) = Hmm.labeled_of_string_all [C1; C2; C3] gd in
     (Seq.of_list (List.map (fun (label, c) -> (label, String_ext.make 1 c)) l), d)
@@ -21,7 +34,7 @@ let create_training_data gene_boundaries fin =
 	    Some (Gene_prediction_2.NotGene, d) ->
 	      [< '(NotGene, d); ctd "" sin >]
 	  | Some (Gene_prediction_2.Gene, d) ->
-	      let (c, d') = split_gene d in
+	      let (c, d') = gene_start d sin in
 	      [< c; ctd d' sin >]
 	  | Some (Gene_prediction_2.Q0, _) ->
 	      raise (Failure "Not supposed to happen")

@@ -3,7 +3,7 @@
  *)
 
 
-module type Ordered_type =
+module type Hmm_type =
   sig
     type s
     type a
@@ -11,7 +11,7 @@ module type Ordered_type =
   end
 
 module Make =
-  functor (Elt : Ordered_type) ->
+  functor (Elt : Hmm_type) ->
     struct
       type state = Elt.s
       type alphabet = Elt.a
@@ -242,3 +242,37 @@ module Make =
 
     end
 	    
+
+(*
+ * These are HMM related functions but do not depend on the functor data as they are more general.
+ *)
+
+
+(*
+ * Because it is common to be working with strings (especially for DNA/Protein sequences where every char is an element)
+ * this is a simple function to apply training data to each element in the string
+ * This takes a string and a list of labels to apply.  It will only apply labels if the string is large enough for all
+ * of the labels to be applied.  
+ * a Some (labeled, rest) is returned on success, None otherwise.  This does not apply it recursively.  use '_all'
+ * variant of the function for that
+ *)
+
+let labeled_of_string labels s =
+  if List.length labels <= String_ext.length s then
+    let ll = List.length labels in
+    Some (Misc_lib.zip labels (Misc_lib.list_of_string (String_ext.sub s 0 ll)),
+	  String_ext.sub s ll (String_ext.length s - ll))
+  else
+    None
+
+(*
+ * This is labeled_of_string, but it will consume
+ * as much of the string as it can
+ *)
+let labeled_of_string_all labels s =
+  let rec f acc s =
+    match labeled_of_string labels s with
+	Some (l, s) -> f (l @ acc) s
+      | None -> (acc, s)
+  in
+  f [] s

@@ -1,5 +1,3 @@
-let list_of_string s = Seq.to_list (Seq.of_string s)
-
 (* type states = Q0 | Q1 | Q2 *)
 
 (* let transitions = [ (Q0, [ (Q1, 1.0) ]) *)
@@ -41,33 +39,45 @@ let list_of_string s = Seq.to_list (Seq.of_string s)
 
 (* module H = Hmm.Make(struct type s = states type a = char let compare = compare end) *)
 
-(* let training_data = [ (One, list_of_string "CGATATT") *)
-(* 		    ; (Two, list_of_string "CGATTCT") *)
-(* 		    ; (One, list_of_string "ACGCGC") *)
-(* 		    ; (Two, list_of_string "GTAT") *)
-(* 		    ; (One, list_of_string "ACTAGCT") *)
-(* 		    ; (Two, list_of_string "TATC") *)
-(* 		    ; (One, list_of_string "TGATC") *)
+(* let training_data = [ (One, Misc_lib.list_of_string "CGATATT") *)
+(* 		    ; (Two, Misc_lib.list_of_string "CGATTCT") *)
+(* 		    ; (One, Misc_lib.list_of_string "ACGCGC") *)
+(* 		    ; (Two, Misc_lib.list_of_string "GTAT") *)
+(* 		    ; (One, Misc_lib.list_of_string "ACTAGCT") *)
+(* 		    ; (Two, Misc_lib.list_of_string "TATC") *)
+(* 		    ; (One, Misc_lib.list_of_string "TGATC") *)
 (* 		    ] *)
 
 
-(* let training_data = [ (One, list_of_string "CGAT") *)
-(* 		    ; (One, list_of_string "ATT") *)
-(* 		    ; (Two, list_of_string "CGATTCT") *)
-(* 		    ; (One, list_of_string "ACGCGC") *)
-(* 		    ; (Two, list_of_string "GTAT") *)
-(* 		    ; (One, list_of_string "ACTAGCT") *)
-(* 		    ; (Two, list_of_string "TATC") *)
-(* 		    ; (One, list_of_string "TGATC") *)
+(* let training_data = [ (One, Misc_lib.list_of_string "CGAT") *)
+(* 		    ; (One, Misc_lib.list_of_string "ATT") *)
+(* 		    ; (Two, Misc_lib.list_of_string "CGATTCT") *)
+(* 		    ; (One, Misc_lib.list_of_string "ACGCGC") *)
+(* 		    ; (Two, Misc_lib.list_of_string "GTAT") *)
+(* 		    ; (One, Misc_lib.list_of_string "ACTAGCT") *)
+(* 		    ; (Two, Misc_lib.list_of_string "TATC") *)
+(* 		    ; (One, Misc_lib.list_of_string "TGATC") *)
 (* 		    ] *)
 
+
+let genes ng sg = 
+  List.map 
+    (fun s -> 
+       if s <> sg && s <> ng then
+	 sg
+       else
+	 s)
+    
+			      
 
 module H = Hmm.Make(struct type s = Gene_prediction_4.coding_state type a = char let compare = compare end)
 
 let fasta = Fasta.read_file ~chunk_size:10000 "../datasets/E.coli.O103.H2_str.12009.fasta"
 let gene_boundaries = Genbank.read "../datasets/E.coli.O103.H2_str.12009.gb"
 let td = Seq.to_list (Gene_prediction_4.create_training_data gene_boundaries fasta)
-let training_data = Seq.map (fun (s, v) -> (s, list_of_string v)) (Seq.of_list td)
+let training_data = Seq.map (fun (s, v) -> (s, Misc_lib.list_of_string v)) (Seq.of_list td)
 let hmm = H.train Gene_prediction_4.Q0 training_data
 let (total, path, prob) = H.forward_viterbi (Fasta.to_seq (Fasta.read_file ~chunk_size:10000 "../datasets/E.coli.O103.H2_str.12009.fasta")) hmm
+
+
 

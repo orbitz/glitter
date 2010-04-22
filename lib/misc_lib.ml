@@ -1,4 +1,7 @@
 
+(* Very expensive function for what it does, but easy implementation *)
+let list_of_string s = Seq.to_list (Seq.of_string s)
+
 let uniq l =
   List.rev (List.fold_left 
 	      (fun acc e -> 
@@ -22,3 +25,12 @@ let boundaries l =
 		       (e, (idx, idx))::(s, (x, idx))::accs)
 	      []
 	      (Seq.enumerate (Seq.of_list l)))
+
+
+let rec zip l1 l2 =
+  match (l1, l2) with
+      (x1::x1s, x2::x2s) ->
+	(x1, x2)::zip x1s x2s
+    | _ ->
+	[]
+
