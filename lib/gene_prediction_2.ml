@@ -13,8 +13,7 @@ type coding_state = Q0 | NotGene | Gene
 let read_sequence_with_boundaries oe fin =
   match Seq.next fin with
       Some (Fasta.Sequence d) -> 
-	let oe' = oe + 1 in
-	Some ((oe', oe' + String_ext.length d), d)
+	Some ((oe, oe + String_ext.length d), d)
     | Some (Fasta.Header h) -> Some ((0, 0), h)
     | None -> None
 
@@ -37,7 +36,7 @@ let remove_overlap l =
 let create_training_data gene_boundaries fin =
   let rec read_next f oe =
     match read_sequence_with_boundaries oe fin with
-	Some ((0, 0), _h) -> read_next f (-1)
+	Some ((0, 0), _h) -> read_next f 0
       | Some ((s, e), d) -> f (s, e) d
       | None -> [< >]
   in
@@ -68,6 +67,6 @@ let create_training_data gene_boundaries fin =
 	  raise (Failure (Printf.sprintf "foo - s: %d e: %d gs: %d ge: %d d.length: %d d: %s" s e (fst (List.hd gb)) (snd (List.hd gb)) (String_ext.length d) d))
   in
   let gene_boundaries = remove_overlap (List.sort compare gene_boundaries) in
-  read_next (ctd gene_boundaries) (-1)
+  read_next (ctd gene_boundaries) 0
 
   
