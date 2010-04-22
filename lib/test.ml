@@ -60,24 +60,27 @@
 (* 		    ] *)
 
 
-let genes ng sg = 
-  List.map 
-    (fun s -> 
-       if s <> sg && s <> ng then
-	 sg
-       else
-	 s)
+let genes ng sg l = 
+  Seq.to_list (Seq.map 
+		 (fun s -> 
+		    if s <> sg && s <> ng then
+		      sg
+		    else
+		      s)
+		 (Seq.of_list l))
     
 			      
 
-module H = Hmm.Make(struct type s = Gene_prediction_4.coding_state type a = char let compare = compare end)
+module H = Hmm.Make(struct type s = Gene_prediction_2.coding_state type a = char let compare = compare end)
 
 let fasta = Fasta.read_file ~chunk_size:10000 "../datasets/E.coli.O103.H2_str.12009.fasta"
 let gene_boundaries = Genbank.read "../datasets/E.coli.O103.H2_str.12009.gb"
-let td = Seq.to_list (Gene_prediction_4.create_training_data gene_boundaries fasta)
-let training_data = Seq.map (fun (s, v) -> (s, Misc_lib.list_of_string v)) (Seq.of_list td)
-let hmm = H.train Gene_prediction_4.Q0 training_data
-let (total, path, prob) = H.forward_viterbi (Fasta.to_seq (Fasta.read_file ~chunk_size:10000 "../datasets/E.coli.O103.H2_str.12009.fasta")) hmm
+let td = Seq.to_list (Gene_prediction_2.create_training_data gene_boundaries fasta)
+(* let training_data = Seq.map (fun (s, v) -> (s, Misc_lib.list_of_string v)) (Seq.of_list td) *)
+(* let hmm = H.train Gene_prediction_4.Q0 training_data *)
+(* let (total, path, prob) = H.forward_viterbi (Fasta.to_seq (Fasta.read_file ~chunk_size:10000 "../datasets/E.coli.O103.H2_str.12009.fasta")) hmm *)
 
+(* let gene_list = genes Gene_prediction_4.NotGene Gene_prediction_4.C1 path *)
 
+(* let count = List.length (List.filter (fun (s, _) -> s <> Gene_prediction_4.NotGene) (Misc_lib.boundaries gene_list)) *)
 

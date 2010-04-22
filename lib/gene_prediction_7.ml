@@ -17,7 +17,7 @@ let create_training_data gene_boundaries fin =
 	    gene_start (d ^ d') sin
 	| Some (Gene_prediction_2.NotGene, _) ->
 	    raise (Failure "At start of gene and gene end, wuuut?")
-	| None ->
+	| _ ->
 	    raise (Failure "At start of gene and sequence end, wuuuut?")
     else
     let (l, d) = Hmm.labeled_of_string_all [A; T; G;] d in
