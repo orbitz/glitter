@@ -83,6 +83,3 @@ let (total, path, prob) = H.forward_viterbi (Fasta.to_seq (Fasta.read_file ~chun
 let gene_list = genes Gene_prediction_4.NotGene Gene_prediction_4.C1 path
 
 let count = List.length (List.filter (fun (s, _) -> s <> Gene_prediction_4.NotGene) (Misc_lib.boundaries gene_list))
-
-
-List.map (fun (_, s) -> String.length s mod 3) (List.filter (fun (s, _) -> s <> Gene_prediction_2.NotGene) td)
