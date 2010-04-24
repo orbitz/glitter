@@ -2,6 +2,8 @@
 (* Very expensive function for what it does, but easy implementation *)
 let list_of_string s = Seq.to_list (Seq.of_string s)
 
+let identity x = x
+
 let uniq l =
   List.rev (List.fold_left 
 	      (fun acc e -> 

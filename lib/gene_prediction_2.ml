@@ -123,5 +123,11 @@ let verify_training_data td =
   vtd 0 ""
 
 
+(*
+ * We work in strings for some of this stuff for ease of use but viterbi wants a list
+ * of states. this is a simple wrapper to make our training data that on the fly
+ *)
+let map_td_to_list f gb fasta = Seq.map (fun (s, v) -> (s, Misc_lib.list_of_string v)) (f gb fasta)
+
 let predict training_fname fasta_fname =
-  Gene_predictor.predict training_fname fasta_fname Q0 H.train H.forward_viterbi create_training_data NotGene Gene
+  Gene_predictor.predict training_fname fasta_fname Q0 H.train H.forward_viterbi (map_td_to_list create_training_data) Misc_lib.identity NotGene Gene

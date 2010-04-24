@@ -126,7 +126,7 @@ module Make =
 			  (get_emissions hmm (fst s)))
 		       trans)
 		in
-		let ep = List.assoc x (get_emissions hmm ts) in
+		let ep = get_emission hmm ts x in
 		tp *. ep *. p_of_s ts xs
 	in
 	p_of_s hmm.start_end seq

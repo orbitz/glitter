@@ -51,8 +51,26 @@ let create_training_data gene_boundaries fin =
 	raise (Failure "Expecting at least 3 values")
 
 
+let map_td_to_list f gb fasta = Seq.map (fun (s, v) -> (s, [v])) (f gb fasta)
+
+let convert fin =
+  let rec f =
+    function
+	[] ->
+	  raise (Failure "An empty entry in convert should never happen")
+      | x::xs as xss -> begin
+	  let str = String_ext.concat "" (List.map (String_ext.make 1) xss) in
+	  match Seq.next fin with
+	      Some v ->
+		[< 'str; f (xs @ [v]) >]
+	    | None ->
+		[< 'str >]
+	end
+  in
+  f (Seq.take 3 fin)
+
 let predict training_fname fasta_fname =
-  Gene_predictor.predict training_fname fasta_fname Q0 H.train H.forward_viterbi create_training_data NotGene Start
+  Gene_predictor.predict training_fname fasta_fname Q0 H.train H.forward_viterbi (map_td_to_list create_training_data) convert NotGene Start
 
 
 

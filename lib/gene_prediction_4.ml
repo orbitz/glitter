@@ -47,4 +47,4 @@ let create_training_data gene_boundaries fin =
   ctd "" sin
 
 let predict training_fname fasta_fname =
-  Gene_predictor.predict training_fname fasta_fname Q0 H.train H.forward_viterbi create_training_data NotGene C1
+  Gene_predictor.predict training_fname fasta_fname Q0 H.train H.forward_viterbi (Gene_prediction_2.map_td_to_list create_training_data) Misc_lib.identity NotGene C1
