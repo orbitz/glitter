@@ -2,6 +2,7 @@
 
 type coding_state = Q0 | NotGene | C1 | C2 | C3
 
+module H = Hmm.Make(struct type s = coding_state type a = char let compare = compare end)
 
 (*
  * This creates our training.  The algorithm here uses
@@ -44,3 +45,6 @@ let create_training_data gene_boundaries fin =
   in
   let sin = Gene_prediction_2.create_training_data gene_boundaries fin in
   ctd "" sin
+
+let predict training_fname fasta_fname =
+  Gene_predictor.predict training_fname fasta_fname Q0 H.train H.forward_viterbi create_training_data NotGene C1

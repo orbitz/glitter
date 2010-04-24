@@ -1,3 +1,8 @@
 #!/bin/sh
 
-ocaml str.cma seq.cmo lazy_io.cmo misc_lib.cmo string_ext.cmo fasta.cmo genbank.cmo hmm.cmo gene_prediction_2.cmo gene_prediction_4.cmo gene_prediction_7.cmo
+SUFFIX=cmo
+LIB_SUFFIX=cma
+
+BASE_OBJECTS="str.$LIB_SUFFIX seq.$SUFFIX lazy_io.$SUFFIX misc_lib.$SUFFIX string_ext.$SUFFIX fasta.$SUFFIX genbank.$SUFFIX hmm.$SUFFIX gene_predictor.$SUFFIX gene_prediction_2.$SUFFIX gene_prediction_4.$SUFFIX gene_prediction_7.$SUFFIX gene_prediction_10.$SUFFIX "
+
+ocaml $BASE_OBJECTS

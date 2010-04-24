@@ -70,7 +70,10 @@ module Make =
 	List.assoc s2 (get_emissions hmm s1)
 
       let get_emission_def hmm s1 s2 def =
-	List.assoc s2 (get_emissions hmm s1)
+	try
+	  List.assoc s2 (get_emissions hmm s1)
+	with
+	    Not_found -> def
 	  
       let get_random_transition hmm s =
 	random_by_weight (get_transitions hmm s)
@@ -140,6 +143,7 @@ module Make =
 	  let p = log (get_emission_def hmm s ob 0.0) +. log (get_transition_def hmm s ns 0.0) in
 	  let prob = prob +. p in
 	  let v_prob = v_prob +. p in
+	  (* This line might be a problem *)
 	  let total = if total = neg_infinity then prob else logsum total prob in
 	  if v_prob > valmax then
 	    (total, ns :: v_path, v_prob)
@@ -180,7 +184,7 @@ module Make =
 	    (StateMap.find (List.hd states) t)
 	    (List.tl states) 
 	in
-	(exp total, List.rev v_path, exp v_prob)
+	(total, List.rev v_path, v_prob)
 
       (*
        * Train an HMM given an input sequence.  Sequence is lazy

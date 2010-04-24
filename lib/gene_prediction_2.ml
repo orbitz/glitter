@@ -2,6 +2,18 @@
 
 type coding_state = Q0 | NotGene | Gene
 
+module H = Hmm.Make(struct type s = coding_state type a = char let compare = compare end)
+
+let genes ng sg l = 
+  Seq.to_list (Seq.map 
+		 (fun s -> 
+		    if s <> sg && s <> ng then
+		      sg
+		    else
+		      s)
+		 (Seq.of_list l))
+
+
 (*
  * If the next to read in the fasta file is a header it returns
  * Some ((0, 0), header value)
@@ -109,3 +121,7 @@ let verify_training_data td =
 	  ()
   in
   vtd 0 ""
+
+
+let predict training_fname fasta_fname =
+  Gene_predictor.predict training_fname fasta_fname Q0 H.train H.forward_viterbi create_training_data NotGene Gene
