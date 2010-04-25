@@ -1,8 +1,6 @@
 
-let ((total, path, prob), _hmm, gene_list, count, training_count) = Gene_prediction_2.predict Sys.argv.(2) Sys.argv.(1)
+let data = Gene_prediction_2.predict Sys.argv.(2) Sys.argv.(1)
 
-let () =
-  Printf.fprintf stdout "%f\n%f\n%d\n%d\n" total prob count training_count;
-  Gene_predictor.write_gene_list gene_list stdout
+let () = Gene_predictor.print_data stdout data
 
 

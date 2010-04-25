@@ -4,7 +4,12 @@ type coding_state =
     Q0 | NotGene 
   | Start1 | Start2 | Start3 | C1 | C2 | C3 | Stop1 | Stop2 | Stop3
 
-module H = Hmm.Make(struct type s = coding_state type a = char let compare = compare end)
+module H = Hmm.Make(struct 
+		      type s = coding_state 
+		      type a = char 
+		      let scompare = compare
+		      let acompare = compare
+		    end)
 
 let to_stream l = Seq.of_list (List.map (fun (label, c) -> (label, String_ext.make 1 c)) l)
 

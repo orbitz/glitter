@@ -2,7 +2,12 @@
 
 type coding_state = Q0 | NotGene | C1 | C2 | C3
 
-module H = Hmm.Make(struct type s = coding_state type a = char let compare = compare end)
+module H = Hmm.Make(struct 
+		      type s = coding_state 
+		      type a = char 
+		      let scompare = compare
+		      let acompare = compare
+		    end)
 
 (*
  * This creates our training.  The algorithm here uses

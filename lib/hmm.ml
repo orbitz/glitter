@@ -7,24 +7,41 @@ module type Hmm_type =
   sig
     type s
     type a
-    val compare: s -> s -> int
+    val scompare: s -> s -> int
+    val acompare: a -> a -> int
   end
 
 module Make =
   functor (Elt : Hmm_type) ->
     struct
+
       type state = Elt.s
       type alphabet = Elt.a
+
+      module StateMap = Map.Make(struct type t = state let compare = Elt.scompare end)
+      module EmissionMap = Map.Make(struct type t = alphabet let compare = Elt.acompare end)
+
       type probability = float
       type transition = state * (state * probability) list
+      type transition_map = probability StateMap.t StateMap.t
       type emission = state * (alphabet * probability) list
+      type emission_map = probability EmissionMap.t StateMap.t
 
-      module StateMap = Map.Make(struct type t = state let compare = Elt.compare end)
-	  
+
       type hmm_state = { transitions : transition list
+		       ; transitions_map : transition_map
 		       ; emissions : emission list
+		       ; emissions_map : emission_map
 		       ; start_end : state
+		       ; states : state list
 		       }
+
+
+      let list_of_statemap (m : 'v StateMap.t) = StateMap.fold (fun k v acc -> (k, v)::acc) m []
+      let statemap_of_list : (StateMap.key * 'v) list -> 'v StateMap.t = List.fold_left (fun m (k, v) -> StateMap.add k v m) StateMap.empty
+	
+      let list_of_emissionmap (m : 'v EmissionMap.t) = EmissionMap.fold (fun k v acc -> (k, v)::acc) m []
+      let emissionmap_of_list : (EmissionMap.key * 'v) list -> 'v EmissionMap.t = List.fold_left (fun m (k, v) -> EmissionMap.add k v m) EmissionMap.empty
 
       (* misc function for calculating a random weight *)
       let random_by_weight l =
@@ -42,17 +59,17 @@ module Make =
 
 
       (* a misc funciton to work on lists *)
-      let rec drop_while f =
+      let rec drop_until f =
 	function
 	    [] -> []
 	  | x::xs when f x -> x::xs
-	  | _::xs -> drop_while f xs
+	  | _::xs -> drop_until f xs
 	      
       let get_transitions hmm s =
-	List.filter (fun (s, p) -> p > 0.0) (List.assoc s hmm.transitions)
+	StateMap.find s hmm.transitions_map
 
       let get_transition hmm s1 s2 =
-	List.assoc s2 (get_transitions hmm s1)
+	StateMap.find s2 (get_transitions hmm s1)
 
       let get_transition_def hmm s1 s2 def =
 	try
@@ -64,30 +81,49 @@ module Make =
 	List.map fst (List.filter (fun (s, es) -> List.mem_assoc e es && List.assoc e es > 0.0) hmm.emissions)
 
       let get_emissions hmm s =
-	List.filter (fun (s, p) -> p > 0.0) (List.assoc s hmm.emissions)
+	StateMap.find s hmm.emissions_map
 
-      let get_emission hmm s1 s2 =
-	List.assoc s2 (get_emissions hmm s1)
+      let get_emission hmm s1 obs =
+	EmissionMap.find obs (get_emissions hmm s1)
 
-      let get_emission_def hmm s1 s2 def =
+      let get_emission_def hmm s1 obs def =
 	try
-	  List.assoc s2 (get_emissions hmm s1)
+	  get_emission hmm s1 obs
 	with
 	    Not_found -> def
 	  
       let get_random_transition hmm s =
-	random_by_weight (get_transitions hmm s)
+	random_by_weight (list_of_statemap (get_transitions hmm s))
 	  
       let get_random_emission hmm s =
-	random_by_weight (get_emissions hmm s)
+	random_by_weight (list_of_emissionmap (get_emissions hmm s))
 
       let get_states hmm =
-	List.filter ((<>) hmm.start_end) (List.map fst hmm.transitions)
+	hmm.states
+
 	  
       let make t e se =
 	{ transitions = t
+	; transitions_map = 
+	    List.fold_left 
+	      (fun acc (s, e) -> 
+		 StateMap.add 
+		   s 
+		   (statemap_of_list (List.filter (fun (_, p) -> p > 0.0) e)) 
+		   acc)
+	      StateMap.empty 
+	      t
 	; emissions = e
+	; emissions_map = 
+	    List.fold_left 
+	      (fun acc (s, e) -> 
+		 StateMap.add 
+		   s 
+		   (emissionmap_of_list (List.filter (fun (_, p) -> p > 0.0) e)) acc) 
+	      StateMap.empty 
+	      e
 	; start_end = se
+	; states = List.filter ((<>) se) (List.map fst t)
 	}
 	  
 	  
@@ -116,15 +152,15 @@ module Make =
 	let rec p_of_s s =
 	  function
 	      [] ->
-		snd (List.hd (List.filter (fun (s, _) -> s = hmm.start_end) (get_transitions hmm s)))
+		snd (List.hd (List.filter (fun (s, _) -> s = hmm.start_end) (list_of_statemap (get_transitions hmm s))))
 	    | x::xs ->
 		let trans = get_transitions hmm s in
 		let (ts, tp) =
 		  List.hd
-		    (drop_while
+		    (drop_until
 		       (fun s -> List.mem_assoc x
-			  (get_emissions hmm (fst s)))
-		       trans)
+			  (list_of_emissionmap (get_emissions hmm (fst s))))
+		       (list_of_statemap trans))
 		in
 		let ep = get_emission hmm ts x in
 		tp *. ep *. p_of_s ts xs
@@ -190,23 +226,38 @@ module Make =
        * Train an HMM given an input sequence.  Sequence is lazy
        * this also needs to know the start_end state for training
        *)
-      type hmm_builder = { trans : (state * int32) list StateMap.t
-			 ; emiss : (alphabet * int32) list StateMap.t
+      type hmm_builder = { trans : int32 StateMap.t StateMap.t
+			 ; emiss : int32 EmissionMap.t StateMap.t
 			 ; se : state
 			 }
 
-      let update_m m ss vk =
+      let update_sm m ss vk =
+	let statemap_of_list : (StateMap.key * 'v) list -> 'v StateMap.t = List.fold_left (fun m (k, v) -> StateMap.add k v m) StateMap.empty in
 	try
 	  let v = StateMap.find ss m in
 	  try
-	    let c = List.assoc vk v in
-	    StateMap.add ss ((vk, Int32.succ c)::(List.remove_assoc vk v)) m
+	    let c = StateMap.find vk v in
+	    StateMap.add ss (StateMap.add vk (Int32.succ c) v) m
 	  with
 	      Not_found ->
-		StateMap.add ss ((vk, Int32.of_int 1)::v) m
+		StateMap.add ss (StateMap.add vk Int32.one v) m
 	with
 	    Not_found ->
-	      StateMap.add ss [(vk, Int32.of_int 1)] m
+	      StateMap.add ss (statemap_of_list [(vk, Int32.one)]) m
+
+      let update_em m ss vk =
+	let emissionmap_of_list : (EmissionMap.key * 'v) list -> 'v EmissionMap.t = List.fold_left (fun m (k, v) -> EmissionMap.add k v m) EmissionMap.empty in
+	try
+	  let v = StateMap.find ss m in
+	  try
+	    let c = EmissionMap.find vk v in
+	    StateMap.add ss (EmissionMap.add vk (Int32.succ c) v) m
+	  with
+	      Not_found ->
+		StateMap.add ss (EmissionMap.add vk Int32.one v) m
+	with
+	    Not_found ->
+	      StateMap.add ss (emissionmap_of_list [(vk, Int32.one)]) m
 
 
       let train start_end seq =
@@ -220,28 +271,28 @@ module Make =
 		    | Some (s, d) ->
 			train' cs s hmm_b d
 		    | None ->
-			{hmm_b with trans = update_m hmm_b.trans cs start_end}
+			{hmm_b with trans = update_sm hmm_b.trans cs start_end}
 		end
 	    | x::xs ->
 		train'
 		  cs
 		  cs 
 		  {hmm_b with
-		     trans = update_m hmm_b.trans ps cs
-		     ; emiss = update_m hmm_b.emiss cs x
+		     trans = update_sm hmm_b.trans ps cs
+		     ; emiss = update_em hmm_b.emiss cs x
 		  }
 		  xs
 	in
-	let make_probabilities trans =
+	let make_probabilities trans to_list =
 	  StateMap.fold
 	    (fun k v a ->
-	       let sum = List.fold_left (Int32.add) (Int32.of_int 0) (List.map snd v) in
-	       (k, (List.map (fun (s, v) -> (s, Int32.to_float v /. Int32.to_float sum)) v))::a)
+	       let sum = List.fold_left (Int32.add) (Int32.zero) (List.map snd (to_list v)) in
+	       (k, (List.map (fun (s, v) -> (s, Int32.to_float v /. Int32.to_float sum)) (to_list v)))::a)
 	    trans
 	    []
 	in
 	let hmm_b = train' start_end start_end {trans = StateMap.empty; emiss = StateMap.empty; se = start_end} [] in
-	make (make_probabilities hmm_b.trans) (make_probabilities hmm_b.emiss) start_end
+	make (make_probabilities hmm_b.trans list_of_statemap) (make_probabilities hmm_b.emiss list_of_emissionmap) start_end
 	  
 
     end

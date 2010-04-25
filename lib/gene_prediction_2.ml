@@ -2,7 +2,12 @@
 
 type coding_state = Q0 | NotGene | Gene
 
-module H = Hmm.Make(struct type s = coding_state type a = char let compare = compare end)
+module H = Hmm.Make(struct 
+		      type s = coding_state 
+		      type a = char 
+		      let scompare = compare
+		      let acompare = compare
+		    end)
 
 let genes ng sg l = 
   Seq.to_list (Seq.map 

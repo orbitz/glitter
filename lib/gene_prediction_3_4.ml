@@ -2,7 +2,12 @@
 
 type coding_state = Q0 | NotGene | Start | Codon | Stop
 
-module H = Hmm.Make(struct type s = coding_state type a = string let compare = compare end)
+module H = Hmm.Make(struct 
+		      type s = coding_state 
+		      type a = string
+		      let scompare = compare
+		      let acompare = compare
+		    end)
 
 let join (c1, c2, c3) = String_ext.concat "" (List.map snd [c1; c2; c3])
 
@@ -43,7 +48,17 @@ let rec consume_notgene ((c1, _, _) as cs) sin =
 
 
 let create_training_data gene_boundaries fin =
-  let sin = Gene_prediction_10.create_training_data gene_boundaries fin in
+  let rec make_single sin = 
+    match Seq.next sin with
+	Some (l, v) when String_ext.length v > 1 ->
+	  let string_seq = Seq.map (fun c -> (l, String_ext.make 1 c)) (Seq.of_string v) in
+	  [< string_seq; make_single sin >]
+      | Some (l, v) ->
+	  [< '(l, v); make_single sin >]
+      | None ->
+	  [< >]
+  in
+  let sin = make_single (Gene_prediction_10.create_training_data gene_boundaries fin) in
   match Seq.take 3 sin with
       [c1; c2; c3] ->
 	consume_notgene (c1, c2, c3) sin
@@ -71,6 +86,4 @@ let convert fin =
 
 let predict training_fname fasta_fname =
   Gene_predictor.predict training_fname fasta_fname Q0 H.train H.forward_viterbi (map_td_to_list create_training_data) convert NotGene Start
-
-
 
